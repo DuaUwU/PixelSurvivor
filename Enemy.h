@@ -16,6 +16,10 @@ struct EnemyManager {
     Enemy enemies[MAX_ENEMIES];
     int enemyCount = 0;
     float spawnTimer = 0;
+    bool warningActive = false;
+    float warningTimer = 0;
+    float warningX = 0;
+    float warningY = 0;
 };
 
 void SpawnEnemy(EnemyManager& manager,int index, int screenWidth, int screenHeight, const Player& player);

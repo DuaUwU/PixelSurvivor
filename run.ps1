@@ -12,6 +12,7 @@ Write-Host "=== Building Pixel Survivor ===" -ForegroundColor Cyan
     .\Player.cpp `
     .\Enemy.cpp `
     .\Game.cpp `
+    .\Bullet.cpp `
     -o $output `
     -L"C:\msys64\ucrt64\lib" `
     -lraylib -lopengl32 -lgdi32 -lwinmm

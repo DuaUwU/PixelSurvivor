@@ -5,30 +5,103 @@
 #include <cmath>
 #include <cstdlib>
 
-void SpawnEnemy(EnemyManager& manager, int index, int screenWidth, int screenHeight, const Player& player) {
-    
-    float spawnRadius = 100;
-    float distance;
-    do{
-        manager.enemies[index].x = GetRandomValue(0, screenWidth - 32);
-        manager.enemies[index].y = GetRandomValue(0, screenHeight - 32);
 
-        float dx = manager.enemies[index].x - player.x;
-        float dy = manager.enemies[index].y - player.y;
+void SpawnEnemy(
+    EnemyManager& manager,
+    int index,
+    int screenWidth,
+    int screenHeight,
+    const Player& player
+) {
+    // Quái xuất hiện tại đúng vị trí vòng cảnh báo
+    manager.enemies[index].x = manager.warningX;
+    manager.enemies[index].y = manager.warningY;
 
-        distance = sqrt(dx * dx + dy * dy);
-
-    }while(distance < spawnRadius);
-    
     manager.enemies[index].speed = 100;
-}   
+}
 
 void UpdateEnemies(EnemyManager& manager,float dt, int screenWidth, int screenHeight, const Player& player, const GameState& game) {
+    // Đếm thời gian đến đợt spawn tiếp theo
     manager.spawnTimer += dt;
-    if(manager.spawnTimer >= 10 && manager.enemyCount < MAX_ENEMIES) {
-        manager.spawnTimer = 0;
-        SpawnEnemy(manager, manager.enemyCount,screenWidth,screenHeight, player);
-        manager.enemyCount++;
+
+    float spawnInterval = 10.0f - game.survivalTime * 0.1f;
+
+    if (spawnInterval < 3.0f) {
+        spawnInterval = 3.0f;
+    }
+
+// Bắt đầu cảnh báo
+    if (!manager.warningActive &&
+        manager.spawnTimer >= spawnInterval &&
+        manager.enemyCount < MAX_ENEMIES) {
+
+        manager.warningActive = true;
+        manager.warningTimer = 0;
+
+        // Chọn vị trí cảnh báo cách player ít nhất 120 pixel
+        float dx, dy, distance;
+
+        do {
+            manager.warningX =
+                (float)GetRandomValue(16, screenWidth - 48);
+            manager.warningY =
+                (float)GetRandomValue(16, screenHeight - 48);
+
+            dx = manager.warningX - (player.x + 16);
+            dy = manager.warningY - (player.y + 16);
+
+            distance = sqrt(dx * dx + dy * dy);
+
+        } while (distance < 120);
+    }
+
+// Đang đếm ngược cảnh báo
+    if (manager.warningActive) {
+        manager.warningTimer += dt;
+
+        if (manager.warningTimer >= 0.5f) {
+            float dx = manager.warningX - (player.x + 16);
+            float dy = manager.warningY - (player.y + 16);
+            float distance = sqrt(dx * dx + dy * dy);
+
+            // Nếu player đi vào quá gần vị trí spawn,
+            // chọn lại vị trí và cảnh báo thêm lần nữa.
+            if (distance < 120) {
+                manager.warningX =
+                    (float)GetRandomValue(16, screenWidth - 48);
+                manager.warningY =
+                    (float)GetRandomValue(16, screenHeight - 48);
+
+                dx = manager.warningX - (player.x + 16);
+                dy = manager.warningY - (player.y + 16);
+                distance = sqrt(dx * dx + dy * dy);
+
+                while (distance < 120) {
+                    manager.warningX =
+                        (float)GetRandomValue(16, screenWidth - 48);
+                    manager.warningY =
+                        (float)GetRandomValue(16, screenHeight - 48);
+
+                    dx = manager.warningX - (player.x + 16);
+                    dy = manager.warningY - (player.y + 16);
+                    distance = sqrt(dx * dx + dy * dy);
+                }
+
+                manager.warningTimer = 0;
+            } else {
+                int index = manager.enemyCount;
+
+                manager.enemies[index].x = manager.warningX;
+                manager.enemies[index].y = manager.warningY;
+                manager.enemies[index].speed = 100;
+
+                manager.enemyCount++;
+
+                manager.warningActive = false;
+                manager.warningTimer = 0;
+                manager.spawnTimer = 0;
+            }
+        }
     }
 
     for(int i = 0; i < manager.enemyCount; i++){
